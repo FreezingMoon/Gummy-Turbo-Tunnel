@@ -15,10 +15,10 @@ Avoid all the obstacles and reach level 100. Sounds easy, right? Too bad you are
 All the assets will get preloaded when the game starts.
 The on-screen loaded will be a bit of a joke, simulating the boot of old arcade cabinets, checking components progress happens.
 
-CPU OK
-RAM OK
-DISK OK
-SOUND OK
+CPU OK<br>
+RAM OK<br>
+DISK OK<br>
+SOUND OK<br>
 GUMBLE OK
 
 ### Main Menu
