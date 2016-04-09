@@ -54,5 +54,5 @@ On right side, tap to jump over obstacles.
 
 ## License
 
-Artwork: [CC-By-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0)<br>
+Artwork: [CC-BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0)<br>
 Code: [AGPL 3.0](http://www.gnu.org/licenses/agpl-3.0.html)
