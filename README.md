@@ -1,8 +1,7 @@
 # BattleGum Turbo Tunnel
 
 This game is insipired by the infamous NES game called BattleToads, which had it's 3rd level, Turbo Tunnel, known as one of the most frustrating and difficult levels in gaming history.
-It's a 2d racing game, similar to the infinite runners, but limited in gameplay, so yeah, you can beat it, with enough skill.
-Game engine used is http://phaser.io as the game is meant to tbe played from the browser.
+It's a 2d racing game, similar to the infinite runners, but limited in gameplay, so yeah, you can beat it, with enough skill. You can play from the browser, [Phaser](https://phaser.io) FTW!
 
 ## Objective
 
@@ -45,16 +44,16 @@ An artwork of Gumble being victorious on his vehicle will be displayed, with tex
 
 ## Controls
 
-**Keyboard**
-Up arrow or W to move up
-Down arrow or S to move down
+**Keyboard**<br>
+Up arrow or W to move up<br>
+Down arrow or S to move down<br>
 Spacebar to jump obstacles
 
-**Touchscreen**
-On left side, scroll up and down to move.
+**Touchscreen**<br>
+On left side, scroll up and down to move.<br>
 On right side, tap to jump over obstacles.
 
 ## License
 
-Artwork: [CC-By-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0)
+Artwork: [CC-By-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0)<br>
 Code: [AGPL 3.0](http://www.gnu.org/licenses/agpl-3.0.html)
