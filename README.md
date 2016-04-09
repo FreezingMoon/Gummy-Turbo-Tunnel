@@ -1,6 +1,6 @@
 # BattleGum Turbo Tunnel
 
-This game is insipired by the infamous NES game called BattleToads, which had it's 3rd level, Turbo Tunnel, known as one of the most frustrating and difficult levels in gaming history. It's a 2d racing game, similar to the infinite runners, but limited regarding gameplay, so yeah, you can beat it, with enough skill. You can play from the browser since we're using [Phaser](https://phaser.io) game engine.
+This game is insipired by the infamous NES game called BattleToads, which had it's 3rd level, Turbo Tunnel, known as one of the most frustrating and difficult levels in gaming history. It's a 2d racing game, similar to the infinite runners, but limited game length wise so that you can beat it, with enough skill. You can play from the browser since we're using [Phaser](https://phaser.io) game engine.
 
 ## Objective
 
