@@ -9,7 +9,7 @@ var boundary = { up: 288, down: 432 };
 var debug = false;
 var gameRunning = false;
 var gameScreen;
-var hearts_x = [8, 96, 184, 272, 416]; // TODO: deprecate this
+var hearts_x = [8, 104, 200, 296, 392]; // TODO: deprecate this
 var jumpVelocity = 500;
 var lanesX = [433, 433];
 var lanesY = [176, 272];
@@ -17,7 +17,6 @@ var lastWallSpawnTime = 0;
 var lastWallSpawned = 0;
 var level = 0;
 var lives = 1;
-var lives_x = [8, 104, 192, 272, 360]; // TODO: deprecate this
 var menuScreen;
 var menuScreenIsActive = true;
 var scrollSpeed = 8;
@@ -35,9 +34,10 @@ function preload() {
 	game.load.image('Gumble-menu', './sprites/Gumble-menu.png');
 	game.load.image('press-start', './sprites/press-start.png');
 
+	game.load.image('roadmap', './sprites/roadmap.png');
 	game.load.image('heart', './sprites/heart.png');
 	game.load.image('life', './sprites/life.png');
-	game.load.image('roadmap', './sprites/roadmap.png');
+	game.load.image('warning', './sprites/warning.png');
 
 	game.load.image('gummy-green', './sprites/gummy-worm-green.png');
 	game.load.image('gummy-blue', './sprites/gummy-worm-blue.png');
@@ -205,7 +205,6 @@ function render() {
 }
 
 function addHeart() {	
-		// TODO: have a bigger gap between lives and hearts, having one transition from one side to the other on gain/loss while fading between sprites
 		console.log(hearts_x.length);
 		hearts.push(game.add.sprite(hearts_x[hearts.length], 3 * scale, "heart"));
 		hearts[hearts.length-1].scale.setTo(scale);
