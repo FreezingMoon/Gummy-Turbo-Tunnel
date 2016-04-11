@@ -37,7 +37,7 @@ var straightToGame = true;
 var walls = new Array();
 var wallStatus = [false, false];
 var wallSpawnInAction = false;
-var wallSpawnDelay=1;
+var wallSpawnDelay=2;
 function preload() {
 	game.stage.backgroundColor = 'black';
 	game.load.image('gummy-blue', './sprites/gummy-worm-blue.png');
@@ -59,6 +59,22 @@ var player;
 var wall = new Array();
 var hearts = new Array();
 function create() {
+
+	for (i=0;i<100;i++){
+		//nextLevel();
+		/*
+		scrollSpeed*=1.02;
+		wallSpawnDelay*=.95;
+		blinkDefaultCounter *= .97;
+		blinkDefaultDelay *= .99;
+		*/
+	}
+	/*
+	blinkDelay = blinkDefaultDelay;
+	blinkDelayStart = blinkDefaultDelay;
+	blinkCounter = blinkDefaultCounter;
+	blinkCounterStart = blinkDefaultCounter;
+*/
 	gameScreen = game.add.group();
 	gameWorld = game.add.group();
 	menuScreen = game.add.group();
@@ -210,7 +226,6 @@ function render() {
 }
 
 function addHeart() {
-		console.log(heart_x.length);
 		hearts.push(game.add.sprite(heart_x[hearts.length], heart_y, "heart"));
 		hearts[hearts.length-1].scale.setTo(10);
 		hearts[hearts.length-1].fixedToCamera = true;
@@ -221,28 +236,31 @@ function addHeart() {
 }
 
 function blinkWall(){
-	if (blinkDelay<.125 && walls[lastWallSpawned].visible){
-		blinkCounter=blinkDefaultCounter;
-		blinkDelay = blinkDefaultDelay;
+	if (blinkDelay<.1 && blinkCounter<=0 && walls[lastWallSpawned].visible){
+
+		blinkCounter=blinkCounterStart;
+		blinkDelay = blinkDelayStart;
 		wallStatus[lastWallSpawned]=true;
 		return;
-	} else if (blinkCounter===0){
+	} else if (blinkDelay>.1 && blinkCounter<=0){
 		blinkCounter=blinkCounterStart;//*1.5;
 		blinkDelay = blinkDelayStart*.5;
 		blinkDelayStart = blinkDelay;
 	}
-
 	walls[lastWallSpawned].visible = !walls[lastWallSpawned].visible;
 	blinkCounter--;
 	game.time.events.add(Phaser.Timer.SECOND * blinkDelay, blinkWall, this);
 }
 
 function checkMenuTextAndUpdate(){
-		roundTimeText.text = "Time: " + roundTimer;
 		roundTimer--;
+		if (roundTimer===0){
+			nextLevel();
+		}		
+		roundTimeText.text = "Time: " + roundTimer;
+
 		score += level;
 		scoreText.text = "Score: " + score;
-		
 }
 
 function displayText() {
@@ -257,6 +275,20 @@ function loadMenu() {
 	introText.visible = false;
 	menuScreen.visible = true;
 	menuScreenIsActive = true;
+}
+
+function nextLevel(){
+	roundTimer=roundDefaultTimer;
+	level++;
+	levelCaptionText.text = "Level: " + level;
+	scrollSpeed*=1.01;
+	wallSpawnDelay*=.95;
+	blinkDefaultCounter *= .99;
+	blinkCounterStart = blinkDefaultCounter;
+	blinkCounter = blinkDefaultCounter;
+	blinkDefaultDelay *= .98;
+	blinkDelayStart = blinkDefaultDelay
+	blinkDelay = blinkDefaultDelay;
 }
 
 function otherWall (){
