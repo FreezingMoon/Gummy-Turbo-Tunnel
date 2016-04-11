@@ -8,27 +8,66 @@ Avoid all the obstacles and reach level 100. Sounds easy, right? Too bad you are
 
 ## Game Design
 
-### Asset Loader
-
-All the assets will get preloaded when the game starts.
-The on-screen loaded will be a bit of a joke, simulating the boot of old arcade cabinets, checking components progress happens.
-
-CPU OK<br>
-RAM OK<br>
-DISK OK<br>
-SOUND OK<br>
-GUMBLE OK
-
 ### Main Menu
 
-Here we'll have a big Gumble head staring at us and blinking, with some informative "Press Spacebar" text being displayed under.
+Here we'll have a big Gumble head staring at us and blinking, with hotkeys listen above and  "Press Start" text blinking below.
 
 ### Gameplay
 
 You are controling Gumble, from the [Ancient Beast](https://AncientBeast.com) game project, while riding through the Gummy Turbo Tunnel.
-You start out with a single life, gaining an extra one every 20 levels, when you'll enter a harder difficulty threshold as well.
-The level is semi-randomly generated based on a set of rules, if you are a higher level you'll encounter more types of obstacles.
+The game has 5 zones, each containing 20 semi-randomly generated obstacles plus an extra life that you'll have to actually pick-up.
+Each of the proceeding zones will have a higher difficulty level and you'll get to encouter more types of obstacles along the way.
 You'll have to avoid crashing into all sorts of walls made out of hard checking gum and pass over any holes in the stick gum road.
+
+#### Warm-Up Zone
+
+Default distance between obstacles, 4 blinks when possible.
+
+Normal walls randomly placed on top or bottom lanes (dodge).
+
+Wide walls that can't be dodged are placed on the road (jump).
+
+An extra life will be placed on the road on any lane (pick).
+
+#### Green Checkpoint
+
+Distance between obstacles is now 80% and only 3 blinks.
+
+Wide walls can also be placed in mid-air (don't jump).
+
+Small holes can now also appear, severing the road (jump).
+
+The extra life can be placed mid-air on any lane now (pick).
+
+#### Blue Checkpoint
+
+Distance between obstacles is now 60% and only 2 blinks.
+
+Ramps can randomly appear on any lane before large holes (follow).
+
+Large holes where regular jump won't do anymore (take ramp).
+
+The extra life can be placed right before an obstacle (pick).
+
+#### Yellow Checkpoint
+
+Distance between obstacles is now 40% and only 1 blink.
+
+Normal walls can now be randomly placed on middle lane too (dodge).
+
+Ramps can now randomly appear in mid-air as well on any 3 lanes (jump).
+
+The extra life can be placed above or under wide walls now (pick).
+
+#### Red Checkpoint
+
+Distance between obstacles is now 20% and no blinks.
+
+Short walls will get dropped on any 3 lanes (dodge or jump).
+
+Slower speed moving traffic participants (dodge and maybe jump).
+
+The extra life can be placed over small holes as well now (pick).
 
 ### Game Over
 
