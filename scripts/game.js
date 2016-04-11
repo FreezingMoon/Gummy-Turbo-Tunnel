@@ -1,31 +1,36 @@
 var game = new Phaser.Game(512, 512, Phaser.CANVAS, 'BattleGum', { preload: preload, create: create, update: update, render : render });
+
+var debug = false;
+var scale = 8;
+var menuScreen;
+var menuScreenIsActive = true;
+var gameScreen;
+var gameRunning = false;
+
+var scrollSpeed = 8;
+var boundary = { up: 41 * scale, down: 57 * scale };
+var lanesX = [433, 433];
+var lanesY = [176, 272];
+var speed = 10;
+var jumpVelocity = 500;
+
+var hearts_x = [8, 104, 200, 296, 392]; // TODO: deprecate this
+var lives = 1;
+var level = 0;
+
+var walls = new Array();
+var wallStatus = [false, false];
+var wallSpawnInAction = false;
+var wallSpawnDelay = 1;
+var lastWallSpawnTime = 0;
+var lastWallSpawned = 0;
+
 var blinkDefaultCounter = 10;
 var blinkDefaultDelay = 0.25;
 var blinkCounterStart = blinkDefaultCounter;
 var blinkDelayStart = blinkDefaultDelay;
 var blinkCounter = blinkDefaultCounter;
 var blinkDelay = blinkDefaultDelay;
-var boundary = { up: 288, down: 432 };
-var debug = false;
-var gameRunning = false;
-var gameScreen;
-var hearts_x = [8, 104, 200, 296, 392]; // TODO: deprecate this
-var jumpVelocity = 500;
-var lanesX = [433, 433];
-var lanesY = [176, 272];
-var lastWallSpawnTime = 0;
-var lastWallSpawned = 0;
-var level = 0;
-var lives = 1;
-var menuScreen;
-var menuScreenIsActive = true;
-var scrollSpeed = 8;
-var scale = 8;
-var speed = 10;
-var walls = new Array();
-var wallStatus = [false, false];
-var wallSpawnInAction = false;
-var wallSpawnDelay = 1;
 
 function preload() {
 	game.stage.smoothed = false;
@@ -39,7 +44,9 @@ function preload() {
 	game.load.image('life', './sprites/life.png');
 	game.load.image('warning', './sprites/warning.png');
 
-	game.load.image('gummy-green', './sprites/gummy-worm-green.png');
+	// TODO: use a single gummy worm, but change tints for other 3 colors
+	// using this http://phaser.io/examples/v2/display/tint-sprite
+	game.load.image('gummy-worm', './sprites/gummy-worm.png');
 	game.load.image('gummy-blue', './sprites/gummy-worm-blue.png');
 	game.load.image('gummy-yellow', './sprites/gummy-worm-yellow.png');
 	game.load.image('gummy-red', './sprites/gummy-worm-red.png');
@@ -47,14 +54,14 @@ function preload() {
 	game.load.image('stick-gum', 'sprites/stick-gum.png');
 
 	game.load.image('Gumble', './sprites/Gumble.png');
-	game.load.image('wall', './sprites/wall.png');
+	game.load.image('normal-wall', './sprites/normal-wall.png');
 }
 
 var player;
 var cursors;
-	var keys= new Array();
+var keys = new Array();
 var hearts = new Array();
-var wall = new Array();
+var normalWall = new Array();
 
 function create() {
 	gameScreen = game.add.group();
@@ -88,20 +95,17 @@ function create() {
 	onTop.add(roadmap);
 	roadmap.scale.setTo(scale);
 
-	greenGummy = game.add.tileSprite(0, 15 * scale, 32000, 0, 'gummy-green');
-	gameScreen.add(greenGummy);
-	gameWorld.add(greenGummy);
-	greenGummy.scale.setTo(scale);
-	greenGummy.height = 15;
+	gummyWorm = game.add.tileSprite(0, 15 * scale, 32000, 0, 'gummy-worm');
+	gameWorld.add(gummyWorm);
+	gummyWorm.scale.setTo(scale);
+	gummyWorm.height = 15;
 
 	backDecoration = game.add.tileSprite(0, 32 * scale, 32000, 0, 'gummy-ball');
-	gameScreen.add(backDecoration);
 	gameWorld.add(backDecoration);
 	backDecoration.scale.setTo(scale);
 	backDecoration.height = 6;
 
 	var road = game.add.tileSprite(0, 38 * scale, 32000, 0, 'stick-gum');
-	gameScreen.add(road);
 	gameWorld.add(road);
 	game.physics.arcade.enable(road);
 	road.height = 19;
@@ -109,16 +113,16 @@ function create() {
 	road.body.colliderWorldBounds = true;
 
 	for (wallNum = 0; wallNum < 2; wallNum++) {
-		walls.push(game.add.sprite(lanesX[wallNum], lanesY[wallNum], 'wall'));
+		walls.push(game.add.sprite(lanesX[wallNum], lanesY[wallNum], 'normal-wall'));
 		walls[wallNum].scale.setTo(scale);
 		game.physics.arcade.enable(walls[wallNum]);
 		walls[wallNum].body.colliderWorldBounds = true;
+		// TODO: Use an oblique line instead of determining collission, see Frank'n'Shirt room side walls
 		walls[wallNum].body.setSize(10, 9, 0, 114);
 		walls[wallNum].visible = false;
 	}
 
 	frontDecoration = game.add.tileSprite(0, 54 * scale, 32000, 0, 'gummy-ball');
-	gameScreen.add(frontDecoration);
 	gameWorld.add(frontDecoration);
 
 	// TODO: Make player show behind these
@@ -126,7 +130,6 @@ function create() {
 	frontDecoration.height = 10;
 
 	player = game.add.sprite(16, 368, "Gumble");
-	gameScreen.add(player);
 	onTop.add(player);
 	game.camera.follow(player);
 	game.camera.deadzone = new Phaser.Rectangle(0, game.world.centerY, 10, "100");
@@ -150,7 +153,7 @@ function create() {
 }
 
 function update() {
-// TODO: add pink dot on the roadmap
+// TODO: add pink dot on the roadmap indicating progress
 // TODO: have functional lives
 // TODO: add checkpoints
 	if (gameRunning) {
@@ -180,8 +183,8 @@ function update() {
 		}
 
 	} else if (menuScreenIsActive) {
-		// TODO: change spacebar to any key
-		if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR)) {
+		// TODO: Change spacebar to any key
+		game.input.keyboard.onDownCallback = function () {
 			menuScreenIsActive = false;
 			menuScreen.visible = false;
 			gameRunning = true;
@@ -205,6 +208,8 @@ function render() {
 }
 
 function addHeart() {	
+		// TODO: have a bigger gap between lives and hearts, having one transition from one side to the other on gain/loss while fading between sprites
+		// TODO: when no lives left, the left side gap will be filled with the warning sprite, meaning if you die it's game over
 		console.log(hearts_x.length);
 		hearts.push(game.add.sprite(hearts_x[hearts.length], 3 * scale, "heart"));
 		hearts[hearts.length-1].scale.setTo(scale);
