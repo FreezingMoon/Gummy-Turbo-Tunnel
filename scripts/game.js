@@ -1,6 +1,6 @@
 var game = new Phaser.Game(512, 512, Phaser.CANVAS, 'BattleGum', { preload: preload, create: create, update: update, render : render });
 
-var debug = false;
+var debug = true;
 var scale = 8;
 var menuScreen;
 var menuScreenIsActive = true;
@@ -14,11 +14,11 @@ var lanesY = [176, 272];
 var speed = 10;
 var jumpVelocity = 500;
 
-var hearts_x = [8, 104, 200, 296, 392]; // TODO: deprecate this
 var lives = 1;
 var level = 0;
 
 var walls = new Array();
+var wallLines = new Array();
 var wallStatus = [false, false];
 var wallSpawnInAction = false;
 var wallSpawnDelay=2;
@@ -59,12 +59,18 @@ function preload() {
 }
 
 var player;
+var playerLine;
+var playerBeingHit=false;
+
+var roadMarker;
 var cursors;
 var keys = new Array();
+var lastHeart;
 var hearts = new Array();
 var normalWall = new Array();
 
 function create() {
+
 
 	for (i=0;i<100;i++){
 		//nextLevel();
@@ -103,26 +109,35 @@ function create() {
 
 	menuScreen.visible = true;
 
+
 	game.renderer.renderSession.roundPixels = true;
+
 	game.physics.startSystem(Phaser.Physics.ARCADE);
+
 	game.world.setBounds(0, 0, 512, 512);
-	game.world.enableBody = true;
+
+	//game.world.enableBody = true;
 
 	roadmap = game.add.sprite(scale, scale, 'roadmap');
 	onTop.add(roadmap);
 	roadmap.scale.setTo(scale);
+	console.log(scale);
+	roadMarker = game.add.graphics(scale, scale);
+	roadMarker.beginFill(0xcf3883 , 1);
+	roadMarker.drawRect(0, 0, scale, scale);
 
-	gummyWorm = game.add.tileSprite(0, 15 * scale, 32000, 0, 'gummy-worm');
+
+	gummyWorm = game.add.tileSprite(0, 15 * scale, 0, 0, 'gummy-worm');
 	gameWorld.add(gummyWorm);
 	gummyWorm.scale.setTo(scale);
 	gummyWorm.height = 15;
 
-	backDecoration = game.add.tileSprite(0, 32 * scale, 32000, 0, 'gummy-ball');
+	backDecoration = game.add.tileSprite(0, 32 * scale, 0, 0, 'gummy-ball');
 	gameWorld.add(backDecoration);
 	backDecoration.scale.setTo(scale);
 	backDecoration.height = 6;
 
-	var road = game.add.tileSprite(0, 38 * scale, 32000, 0, 'stick-gum');
+	var road = game.add.tileSprite(0, 38 * scale, 0, 0, 'stick-gum');
 	gameWorld.add(road);
 	game.physics.arcade.enable(road);
 	road.height = 19;
@@ -133,18 +148,10 @@ function create() {
 		walls.push(game.add.sprite(lanesX[wallNum], lanesY[wallNum], 'normal-wall'));
 		walls[wallNum].scale.setTo(scale);
 		game.physics.arcade.enable(walls[wallNum]);
-		walls[wallNum].body.colliderWorldBounds = true;
-		// TODO: Use an oblique line instead of determining collission, see Frank'n'Shirt room side walls
 		walls[wallNum].body.setSize(10, 9, 0, 114);
 		walls[wallNum].visible = false;
 	}
 
-	frontDecoration = game.add.tileSprite(0, 54 * scale, 32000, 0, 'gummy-ball');
-	gameWorld.add(frontDecoration);
-
-	// TODO: Make player show behind these
-	frontDecoration.scale.setTo(scale);
-	frontDecoration.height = 10;
 
 	player = game.add.sprite(16, 368, "Gumble");
 	onTop.add(player);
@@ -157,12 +164,25 @@ function create() {
 	player.scale.setTo(scale);
 	player.anchor.setTo(0, 1);
 
+
+	frontDecoration = game.add.tileSprite(0, 54 * scale, 0, 0, 'gummy-ball');
+	gameWorld.add(frontDecoration);
+	frontDecoration.scale.setTo(scale);
+	frontDecoration.height = 10;
+	onTop.add(frontDecoration);
+
+	lastHeart = game.add.sprite(scale, 3 * scale, "warning");
+	lastHeart.scale.setTo(scale);
+	lastHeart.visible=false;
+	lastHeart.fixedtoCamera=true;
 	for (i = 0; i < 5; i++) {
 		addHeart();
 	}
 
+	gameWorld.autoCull=true;
+	menuScreen.autoCull=true;
+	frontDecoration.autoCull=true;
 	cursors = game.input.keyboard.createCursorKeys();
-	// Enable extra keys to move
 	keys = {
 		W: this.input.keyboard.addKey(Phaser.Keyboard.W),
 		S: this.input.keyboard.addKey(Phaser.Keyboard.S)
@@ -170,16 +190,26 @@ function create() {
 }
 
 function update() {
-// TODO: add pink dot on the roadmap indicating progress
-// TODO: have functional lives
 // TODO: add checkpoints
 	if (gameRunning) {
+		if (gameWorld.x<-1000){
+			gameWorld.x = 0;
+			frontDecoration.x = 0;
+		}
 		gameWorld.x -= scrollSpeed;
+		frontDecoration.x -= scrollSpeed;
+
+		console.log(gameWorld.x);
 		//onTop.sort('y', Phaser.Group.SORT_ASCENDING); // TODO: fix group sorting
 		for (wall = 0; wall < wallStatus.length; wall++) {
 			if (wallStatus[wall]) {
 				walls[wall].x -= scrollSpeed;
+
+
 				if (walls[wall].x <- 256) {
+					level++;
+					roadMarker.x += .5;
+					console.log(level);
 					wallStatus[wall] = false;
 					walls[wall].x = lanesX[wall];
 					walls[wall].visible = false;
@@ -189,6 +219,8 @@ function update() {
 				}
 			}
 		}
+		updateLines();
+
 		if ((cursors.up.isDown || keys.W.isDown) && player.y > boundary["up"]) {
 			player.y -= speed;
 		} else if ((cursors.down.isDown || keys.S.isDown) && player.y < boundary["down"]) {
@@ -200,7 +232,6 @@ function update() {
 		}
 
 	} else if (menuScreenIsActive) {
-		// TODO: Change spacebar to any key
 		game.input.keyboard.onDownCallback = function () {
 			menuScreenIsActive = false;
 			menuScreen.visible = false;
@@ -215,11 +246,10 @@ function update() {
 
 function render() {
 	if (debug && gameRunning) {
-		game.debug.spriteInfo(player, 32, 32);
-
 		game.debug.body(player);
-		for (wallNum in wall) {
-			game.debug.body(wall[wallNum]);
+		game.debug.geom(playerLine, 'rgba(0, 0, 255,1)');
+		for(wall in walls){
+			game.debug.geom(wallLines[wall], 'rgba(255, 0, 0,1)');
 		}
 	}
 }
@@ -228,14 +258,15 @@ function render() {
 function addHeart() {
 		// TODO: have a bigger gap between lives and hearts, having one transition from one side to the other on gain/loss while fading between sprites
 		// TODO: when no lives left, the left side gap will be filled with the warning sprite, meaning if you die it's game over
-		console.log(hearts_x.length);
-		hearts.push(game.add.sprite(hearts_x[hearts.length], 3 * scale, "heart"));
+
+		hearts.push(game.add.sprite(scale+(94*(hearts.length)), 3 * scale, "heart"));
 		hearts[hearts.length-1].scale.setTo(scale);
 		onTop.add(hearts[hearts.length-1]);
 		hearts[hearts.length-1].fixedToCamera = true;
-		if (hearts.length > 1) {
-			//hearts[hearts.length-1].visible = false
+		if (hearts.length > lives) {
+			hearts[hearts.length-lives].visible = false
 		}
+
 }
 
 
@@ -245,8 +276,8 @@ function blinkWall() {
 		blinkDelay = blinkDefaultDelay;
 		wallStatus[lastWallSpawned] = true;
 		return;
-	} else if (blinkCounter === 0) { // check if its an issue for next level conditions
-		blinkCounter = blinkCounterStart; // *1.5;
+	} else if (blinkCounter === 0) {
+		blinkCounter = blinkCounterStart;
 		blinkDelay = blinkDelayStart * 0.5;
 		blinkDelayStart = blinkDelay;
 	}
@@ -273,14 +304,15 @@ function displayText() {
 		loadMenu();
 	}
 }
-
+function gameOver(){
+	gameRunning=false;
+}
 
 function loadMenu() {
 	menuScreen.visible = true;
 	menuScreenIsActive = true;
 }
 
-<<<<<<< HEAD
 function nextLevel(){
 	roundTimer=roundDefaultTimer;
 	level++;
@@ -302,10 +334,47 @@ function otherWall (){
 		return 0;
 	}
 }
+
+function playerHit(){
+	playerBeingHit=true;
+	lives--;
+	if (lives>=0){
+		hearts[lives].visible=false;
+		if (lives===0){
+			lastHeart.visible=true;
+		}
+	} else if (lives<0){
+		gameOver();
+	}
+}
+
 function randomNumber(a, b) {
 	return Math.floor((Math.random() * b) + a);
 }
 
+
 function spawnWall() {
 	game.time.events.add(Phaser.Timer.SECOND * blinkDelay, blinkWall, this);
+}
+
+function updateLines(){
+	playerLine = new Phaser.Line(player.body.position.x,
+		player.body.position.y + player.body.height,
+		player.body.position.x + player.body.width,
+		player.body.position.y);
+
+	for (wall in walls){
+		wallLines[wall] = new Phaser.Line(walls[wall].position.x,
+			walls[wall].position.y + walls[wall].height-scale*scale,
+			walls[wall].position.x + walls[wall].width,
+			walls[wall].position.y + walls[wall].height);
+		playerHitsWall = playerLine.intersects(wallLines[wall], true);
+		if (wallStatus[wall] && playerHitsWall && !playerBeingHit){
+				playerHit();
+		} else if (wallStatus[wall] &&  !playerHitsWall && playerBeingHit){
+			playerBeingHit=false;
+		}
+
+	}
+
 }
