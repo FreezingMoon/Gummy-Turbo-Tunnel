@@ -26,7 +26,7 @@ var wallLines = new Array();
 var wallStatus = [false, false];
 var wallSpawnInAction = false;
 var wallSpawnDelay=2;
-var calmBeforeTheStorm=5;
+var calmBeforeTheStorm=3;
 
 var lastWallSpawnTime = 0;
 var lastWallSpawned = 0;
@@ -53,9 +53,6 @@ function preload() {
 	// TODO: use a single gummy worm, but change tints for other 3 colors
 	// using this http://phaser.io/examples/v2/display/tint-sprite
 	game.load.image('gummy-worm', './sprites/gummy-worm.png');
-	game.load.image('gummy-blue', './sprites/gummy-worm-blue.png');
-	game.load.image('gummy-yellow', './sprites/gummy-worm-yellow.png');
-	game.load.image('gummy-red', './sprites/gummy-worm-red.png');
 	game.load.image('gummy-ball', 'sprites/gummy-ball.png');
 	game.load.image('stick-gum', 'sprites/stick-gum.png');
 
@@ -64,10 +61,14 @@ function preload() {
 }
 
 var player;
+var playerJumping=false;
 var playerLine;
 var playerBeingHit=false;
 
 var roadMarker;
+var roadMarkerLastMoved=0;
+var roadMarkerMoving=0;
+
 var cursors;
 var keys = new Array();
 var lastHeart;
@@ -111,10 +112,10 @@ function create() {
 	onTop.add(roadmap);
 	roadmap.scale.setTo(scale);
 
+
 	roadMarker = game.add.graphics(scale, scale);
 	roadMarker.beginFill(0xcf3883 , 1);
 	roadMarker.drawRect(0, 0, scale, scale);
-
 
 	gummyWorm = game.add.tileSprite(0, 15 * scale, 0, 0, 'gummy-worm');
 	gameWorld.add(gummyWorm);
@@ -183,7 +184,11 @@ function update() {
 // TODO: add checkpoints
 
 	if (gameRunning && !gamePaused && !menuScreenIsActive) {
-
+		if (level!=0 && level%20===0 && roadMarkerMoving===0){
+			game.time.events.repeat(Phaser.Timer.SECOND, 4, moveRoadMarker, this);
+		} else if (level%20!=0 && roadMarkerMoving!=0){
+			roadMarkerMoving=0;
+		}
 		if (gameWorld.x <- 1000 || playerBeingHit){
 			gameWorld.x = 0;
 			frontDecoration.x = 0;
@@ -209,7 +214,7 @@ function update() {
 						blinkDefaultCounter-=2;
 					}
 					if (level%2===0){
-						roadMarker.x += 1;
+						updateRoadMarker(false);
 					}
 					console.log("LEVEL:", level);
 					resetWalls();
@@ -217,13 +222,17 @@ function update() {
 			}
 		}
 		updateLines();
-
-		if ((cursors.up.isDown || keys.W.isDown) && player.y > boundary["up"]) {
+		if (playerJumping){
+		}
+		else if ((cursors.up.isDown || keys.W.isDown) && player.y > boundary["up"]) {
 			player.y -= speed;
 		} else if ((cursors.down.isDown || keys.S.isDown) && player.y < boundary["down"]) {
 			player.y += speed;
-		} 
-		if (game.time.totalElapsedSeconds() - lastWallSpawnTime>=(Number(wall) + Number(1)) * wallSpawnDelay && !wallSpawnInAction) {
+		}
+
+		if (((level%20===0 && game.time.totalElapsedSeconds() - (lastWallSpawnTime+calmBeforeTheStorm)>=(Number(wall) + Number(1)) * wallSpawnDelay )
+	    || (level%20!=0 && game.time.totalElapsedSeconds() - lastWallSpawnTime>=(Number(wall) + Number(1)) * wallSpawnDelay))
+		  && !wallSpawnInAction) {
 			wallSpawnInAction = true;
 			spawnWall();
 		}
@@ -303,6 +312,7 @@ function gameOver(){
 	gameRunning=false;
 }
 
+
 function loadMenu() {
 	menuScreen.visible = true;
 	menuScreenIsActive = true;
@@ -323,7 +333,7 @@ function nextLevel(){
 }
 
 function otherWall (){
-	if (lastWallSpawned===0){
+	if (lastWallSpawned === 0){
 		return 1;
 	} else if (lastWallSpawned === 1) {
 		return 0;
@@ -332,17 +342,18 @@ function otherWall (){
 
 function playerHit(){
 	resetWalls();
-	playerBeingHit=true;
+	playerBeingHit = true;
 
 	lives--;
-	if (lives>=0){
+	if (lives >= 0){
 		hearts[lives].visible=false;
-		level=checkpoint*20;
-		roadMarker.x=scale+(level*.5);
-		if (lives===0){
-			lastHeart.visible=true;
+		level=checkpoint * 20;
+		updateRoadMarker(true);
+
+		if (lives === 0){
+			lastHeart.visible = true;
 		}
-	} else if (lives<0){
+	} else if (lives < 0){
 		gameOver();
 	}
 
@@ -364,9 +375,9 @@ function resetWalls(checkpointReached){
 	}
 		lastWallSpawned = randomWall();
 		wallSpawnInAction = false;
-		level%20===0
-		? lastWallSpawnTime = game.time.totalElapsedSeconds() - calmBeforeTheStorm
-		: lastWallSpawnTime = game.time.totalElapsedSeconds();
+
+		lastWallSpawnTime = game.time.totalElapsedSeconds();
+
 
 }
 function spawnWall() {
@@ -397,3 +408,16 @@ function updateLines(){
 function unpauseGame(){
 	gamePaused=false;
 }
+
+function moveRoadMarker(){
+	if (game.time.totalElapsedSeconds() - roadMarkerLastMoved>1){ //&& game.time.totalElapsedSeconds() - roadMarkerLastMoved<2){
+			roadMarker.x += scale;
+			roadMarkerLastMoved = game.time.totalElapsedSeconds();
+			roadMarkerMoving++;
+	}
+}
+	function updateRoadMarker(death){
+		roadMarker.x = death
+		? scale * (level * .5) + (checkpoint * scale * 3) + scale
+		: scale * (level * .5) + ((checkpoint-1) * scale * 3);
+	}
