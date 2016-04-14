@@ -418,6 +418,6 @@ function moveRoadMarker(){
 }
 	function updateRoadMarker(death){
 		roadMarker.x = death
-		? scale * (level * .5) + (checkpoint * scale * 3) + scale
-		: scale * (level * .5) + ((checkpoint-1) * scale * 3);
+		? scale + scale * (level * .5) + (checkpoint * scale * 3)
+		: scale + scale * (level * .5) + (checkpoint * scale * 3);
 	}
