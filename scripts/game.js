@@ -173,7 +173,8 @@ function create() {
 	cursors = game.input.keyboard.createCursorKeys();
 	keys = {
 		W: this.input.keyboard.addKey(Phaser.Keyboard.W),
-		S: this.input.keyboard.addKey(Phaser.Keyboard.S)
+		S: this.input.keyboard.addKey(Phaser.Keyboard.S),
+		Space: this.input.keyboard.addKey(Phaser.Keyboard.Spacebar)
 	};
 }
 
@@ -206,7 +207,9 @@ function update() {
 						checkpoint++;
 						blinkDefaultCounter-=2;
 					}
-					roadMarker.x += .5;
+					if (level%2===0){
+						roadMarker.x += 1;
+					}
 					console.log("LEVEL:", level);
 					resetWalls();
 				}
@@ -218,7 +221,7 @@ function update() {
 			player.y -= speed;
 		} else if ((cursors.down.isDown || keys.S.isDown) && player.y < boundary["down"]) {
 			player.y += speed;
-		}
+		} else if ()
 		if (game.time.totalElapsedSeconds() - lastWallSpawnTime>=(Number(wall) + Number(1)) * wallSpawnDelay && !wallSpawnInAction) {
 			wallSpawnInAction = true;
 			spawnWall();
