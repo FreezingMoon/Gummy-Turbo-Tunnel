@@ -26,6 +26,7 @@ var wallLines = new Array();
 var wallStatus = [false, false];
 var wallSpawnInAction = false;
 var wallSpawnDelay=2;
+var calmBeforeTheStorm=5;
 
 var lastWallSpawnTime = 0;
 var lastWallSpawned = 0;
@@ -221,7 +222,7 @@ function update() {
 			player.y -= speed;
 		} else if ((cursors.down.isDown || keys.S.isDown) && player.y < boundary["down"]) {
 			player.y += speed;
-		} else if ()
+		} 
 		if (game.time.totalElapsedSeconds() - lastWallSpawnTime>=(Number(wall) + Number(1)) * wallSpawnDelay && !wallSpawnInAction) {
 			wallSpawnInAction = true;
 			spawnWall();
@@ -355,7 +356,7 @@ function randomWall(){
 	return (randomNumber(1,2)-1);
 }
 
-function resetWalls(){
+function resetWalls(checkpointReached){
 	for (wallNumber=0;wallNumber<walls.length;wallNumber++){
 		wallStatus[wallNumber] = false;
 		walls[wallNumber].x = ((lanesX[wallNumber] - (player.x + player.width)) * checkpointModifier[checkpoint] + (player.x + player.width));
@@ -363,7 +364,9 @@ function resetWalls(){
 	}
 		lastWallSpawned = randomWall();
 		wallSpawnInAction = false;
-		lastWallSpawnTime = game.time.totalElapsedSeconds();
+		level%20===0
+		? lastWallSpawnTime = game.time.totalElapsedSeconds() - calmBeforeTheStorm
+		: lastWallSpawnTime = game.time.totalElapsedSeconds();
 
 }
 function spawnWall() {
