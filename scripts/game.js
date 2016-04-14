@@ -185,7 +185,7 @@ function update() {
 
 	if (gameRunning && !gamePaused && !menuScreenIsActive) {
 		if (level!=0 && level%20===0 && roadMarkerMoving===0){
-			game.time.events.repeat(Phaser.Timer.SECOND, 4, moveRoadMarker, this);
+			game.time.events.repeat(Phaser.Timer.SECOND, 3, moveRoadMarker, this);
 		} else if (level%20!=0 && roadMarkerMoving!=0){
 			roadMarkerMoving=0;
 		}
@@ -417,7 +417,13 @@ function moveRoadMarker(){
 	}
 }
 	function updateRoadMarker(death){
-		roadMarker.x = death
-		? scale + scale * (level * .5) + (checkpoint * scale * 3)
-		: scale + scale * (level * .5) + (checkpoint * scale * 3);
+		if (death){
+			roadMarker.x = scale + scale * (level * .5) + (checkpoint * scale * 3);
+		} else if (!death){
+			if (level<21){
+				roadMarker.x = scale + scale * (level * .5);
+			} else if (level>=21){
+				roadMarker.x = scale + scale * (level * .5) + (checkpoint * scale * 3);
+			}
+		}
 	}
