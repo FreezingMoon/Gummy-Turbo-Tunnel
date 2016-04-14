@@ -6,6 +6,7 @@ var menuScreen;
 var menuScreenIsActive = true;
 var gameScreen;
 var gameRunning = false;
+var gamePaused = false;
 
 var scrollSpeed = 8;
 var boundary = { up: 41 * scale, down: 57 * scale };
@@ -15,7 +16,10 @@ var speed = 10;
 var jumpVelocity = 500;
 
 var lives = 1;
+var delayFromCheckpoint = 1;
 var level = 0;
+var checkpoint = 0;
+var checkpointModifier = [1, .8, .6, .4, .2];
 
 var walls = new Array();
 var wallLines = new Array();
@@ -26,7 +30,7 @@ var wallSpawnDelay=2;
 var lastWallSpawnTime = 0;
 var lastWallSpawned = 0;
 
-var blinkDefaultCounter = 10;
+var blinkDefaultCounter = 7;
 var blinkDefaultDelay = 0.25;
 var blinkCounterStart = blinkDefaultCounter;
 var blinkDelayStart = blinkDefaultDelay;
@@ -71,22 +75,6 @@ var normalWall = new Array();
 
 function create() {
 
-
-	for (i=0;i<100;i++){
-		//nextLevel();
-		/*
-		scrollSpeed*=1.02;
-		wallSpawnDelay*=.95;
-		blinkDefaultCounter *= .97;
-		blinkDefaultDelay *= .99;
-		*/
-	}
-	/*
-	blinkDelay = blinkDefaultDelay;
-	blinkDelayStart = blinkDefaultDelay;
-	blinkCounter = blinkDefaultCounter;
-	blinkCounterStart = blinkDefaultCounter;
-*/
 	gameScreen = game.add.group();
 	gameWorld = game.add.group();
 	menuScreen = game.add.group();
@@ -121,7 +109,7 @@ function create() {
 	roadmap = game.add.sprite(scale, scale, 'roadmap');
 	onTop.add(roadmap);
 	roadmap.scale.setTo(scale);
-	console.log(scale);
+
 	roadMarker = game.add.graphics(scale, scale);
 	roadMarker.beginFill(0xcf3883 , 1);
 	roadMarker.drawRect(0, 0, scale, scale);
@@ -191,15 +179,21 @@ function create() {
 
 function update() {
 // TODO: add checkpoints
-	if (gameRunning) {
-		if (gameWorld.x<-1000){
+
+	if (gameRunning && !gamePaused && !menuScreenIsActive) {
+
+		if (gameWorld.x <- 1000 || playerBeingHit){
 			gameWorld.x = 0;
 			frontDecoration.x = 0;
+			if (playerBeingHit){
+				playerBeingHit=false;
+				gamePaused=true;
+				game.time.events.add(Phaser.Timer.SECOND * delayFromCheckpoint, unpauseGame, this);
+			}
+
 		}
 		gameWorld.x -= scrollSpeed;
 		frontDecoration.x -= scrollSpeed;
-
-		console.log(gameWorld.x);
 		//onTop.sort('y', Phaser.Group.SORT_ASCENDING); // TODO: fix group sorting
 		for (wall = 0; wall < wallStatus.length; wall++) {
 			if (wallStatus[wall]) {
@@ -208,14 +202,13 @@ function update() {
 
 				if (walls[wall].x <- 256) {
 					level++;
+					if (level%20===0){
+						checkpoint++;
+						blinkDefaultCounter-=2;
+					}
 					roadMarker.x += .5;
-					console.log(level);
-					wallStatus[wall] = false;
-					walls[wall].x = lanesX[wall];
-					walls[wall].visible = false;
-					lastWallSpawned = otherWall();
-					wallSpawnInAction = false;
-					lastWallSpawnTime = game.time.totalElapsedSeconds();
+					console.log("LEVEL:", level);
+					resetWalls();
 				}
 			}
 		}
@@ -231,7 +224,7 @@ function update() {
 			spawnWall();
 		}
 
-	} else if (menuScreenIsActive) {
+	} else if (!gameRunning && menuScreenIsActive) {
 		game.input.keyboard.onDownCallback = function () {
 			menuScreenIsActive = false;
 			menuScreen.visible = false;
@@ -271,15 +264,13 @@ function addHeart() {
 
 
 function blinkWall() {
-	if (blinkDelay < 0.125 && walls[lastWallSpawned].visible) {
+
+	if (blinkCounter <= 0 && walls[lastWallSpawned].visible) {
+
 		blinkCounter = blinkDefaultCounter;
 		blinkDelay = blinkDefaultDelay;
 		wallStatus[lastWallSpawned] = true;
 		return;
-	} else if (blinkCounter === 0) {
-		blinkCounter = blinkCounterStart;
-		blinkDelay = blinkDelayStart * 0.5;
-		blinkDelayStart = blinkDelay;
 	}
 	walls[lastWallSpawned].visible = !walls[lastWallSpawned].visible;
 	blinkCounter--;
@@ -336,23 +327,42 @@ function otherWall (){
 }
 
 function playerHit(){
+	resetWalls();
 	playerBeingHit=true;
+
 	lives--;
 	if (lives>=0){
 		hearts[lives].visible=false;
+		level=checkpoint*20;
+		roadMarker.x=scale+(level*.5);
 		if (lives===0){
 			lastHeart.visible=true;
 		}
 	} else if (lives<0){
 		gameOver();
 	}
+
 }
 
 function randomNumber(a, b) {
 	return Math.floor((Math.random() * b) + a);
 }
 
+function randomWall(){
+	return (randomNumber(1,2)-1);
+}
 
+function resetWalls(){
+	for (wallNumber=0;wallNumber<walls.length;wallNumber++){
+		wallStatus[wallNumber] = false;
+		walls[wallNumber].x = ((lanesX[wallNumber] - (player.x + player.width)) * checkpointModifier[checkpoint] + (player.x + player.width));
+		walls[wallNumber].visible = false;
+	}
+		lastWallSpawned = randomWall();
+		wallSpawnInAction = false;
+		lastWallSpawnTime = game.time.totalElapsedSeconds();
+
+}
 function spawnWall() {
 	game.time.events.add(Phaser.Timer.SECOND * blinkDelay, blinkWall, this);
 }
@@ -376,5 +386,8 @@ function updateLines(){
 		}
 
 	}
+}
 
+function unpauseGame(){
+	gamePaused=false;
 }
