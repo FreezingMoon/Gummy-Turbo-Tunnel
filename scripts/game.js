@@ -12,8 +12,11 @@ var scrollSpeed = 8;
 var boundary = { up: 41 * scale, down: 57 * scale };
 var lanesX = [433, 433];
 var lanesY = [176, 272];
-var speed = 10;
-var jumpVelocity = 500;
+var speed = 30;
+var jumpDelay = .5
+var jumpSpeed = 300;
+var defaultGravity = 150;
+var gravity = defaultGravity;
 
 var lives = 1;
 var delayFromCheckpoint = 1;
@@ -61,7 +64,12 @@ function preload() {
 }
 
 var player;
+var playerJumpPad;
 var playerJumping=false;
+var playerFalling=false;
+var lastJumpLandedAt = 0;
+
+var playerJumpY=0;
 var playerLine;
 var playerBeingHit=false;
 
@@ -75,6 +83,9 @@ var lastHeart;
 var hearts = new Array();
 var normalWall = new Array();
 
+var gameOverText;
+var winText;
+
 function create() {
 
 	gameScreen = game.add.group();
@@ -84,6 +95,10 @@ function create() {
 
 	gameWorld.visible = false;
 	onTop.visible = false;
+	gameOverText = game.add.text(scale*8, scale*16, "GAME\n OVER", {font:"128px Arial", fill:"white", align:"center"})
+	gameOverText.visible=false;
+	winText = game.add.text(scale*8, scale*16, "YOU\n WIN!", {font:"128px Arial", fill:"white", align:"center"})
+	winText.visible=false;
 
 	var tutorial = game.add.sprite(scale, scale, 'tutorial');
 	tutorial.scale.setTo(scale);
@@ -127,18 +142,19 @@ function create() {
 	backDecoration.scale.setTo(scale);
 	backDecoration.height = 6;
 
+	game.physics.arcade.enable(backDecoration);
+	backDecoration.body.setSize(512, 6, 0, 0);
+	backDecoration.scale.setTo(scale);
+	backDecoration.body.immovable=true;
+
 	var road = game.add.tileSprite(0, 38 * scale, 0, 0, 'stick-gum');
 	gameWorld.add(road);
-	game.physics.arcade.enable(road);
 	road.height = 19;
 	road.scale.setTo(scale);
-	road.body.colliderWorldBounds = true;
 
 	for (wallNum = 0; wallNum < 2; wallNum++) {
 		walls.push(game.add.sprite(lanesX[wallNum], lanesY[wallNum], 'normal-wall'));
 		walls[wallNum].scale.setTo(scale);
-		game.physics.arcade.enable(walls[wallNum]);
-		walls[wallNum].body.setSize(10, 9, 0, 114);
 		walls[wallNum].visible = false;
 	}
 
@@ -154,12 +170,23 @@ function create() {
 	player.scale.setTo(scale);
 	player.anchor.setTo(0, 1);
 
+	playerJumpPad = game.add.sprite(16, 380, null);
+	game.physics.arcade.enable(playerJumpPad);
+	playerJumpPad.body.colliderWorldBounds = true;
+	playerJumpPad.body.setSize(scale*20, 3, 0, 0);
+	playerJumpPad.body.immovable=true;
 
 	frontDecoration = game.add.tileSprite(0, 54 * scale, 0, 0, 'gummy-ball');
 	gameWorld.add(frontDecoration);
 	frontDecoration.scale.setTo(scale);
 	frontDecoration.height = 10;
 	onTop.add(frontDecoration);
+
+	game.physics.arcade.enable(frontDecoration);
+	frontDecoration.body.setSize(512, 100, 0, 25);
+	frontDecoration.scale.setTo(scale);
+	frontDecoration.body.immovable=true;
+
 
 	lastHeart = game.add.sprite(scale, 3 * scale, "warning");
 	lastHeart.scale.setTo(scale);
@@ -176,13 +203,28 @@ function create() {
 	keys = {
 		W: this.input.keyboard.addKey(Phaser.Keyboard.W),
 		S: this.input.keyboard.addKey(Phaser.Keyboard.S),
-		Space: this.input.keyboard.addKey(Phaser.Keyboard.Spacebar)
+		Space: this.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR)
 	};
 }
 
 function update() {
 // TODO: add checkpoints
 
+
+	if (!playerJumping && !playerFalling){
+		game.physics.arcade.collide(player, frontDecoration);
+		game.physics.arcade.collide(player, backDecoration);
+	} else if (playerJumping){
+		player.body.acceleration.y=-jumpSpeed;
+	}
+	if (playerFalling){
+		player.body.gravity.y++;
+		if (game.physics.arcade.collide(player, playerJumpPad)){
+			player.body.gravity.y=0;
+			playerFalling=false;
+			lastJumpLandedAt = game.time.totalElapsedSeconds();
+		}
+	}
 	if (gameRunning && !gamePaused && !menuScreenIsActive) {
 		if (level!=0 && level%20===0 && roadMarkerMoving===0){
 			game.time.events.repeat(Phaser.Timer.SECOND, 3, moveRoadMarker, this);
@@ -209,7 +251,10 @@ function update() {
 
 				if (walls[wall].x <- 256) {
 					level++;
-					if (level%20===0){
+					if(level>=100){
+						gameRunning=false;
+						winText.visible=true;
+					} else if (level%20===0){
 						checkpoint++;
 						blinkDefaultCounter-=2;
 					}
@@ -222,21 +267,26 @@ function update() {
 			}
 		}
 		updateLines();
-		if (playerJumping){
-		}
-		else if ((cursors.up.isDown || keys.W.isDown) && player.y > boundary["up"]) {
-			player.y -= speed;
-		} else if ((cursors.down.isDown || keys.S.isDown) && player.y < boundary["down"]) {
-			player.y += speed;
-		}
+		if (!playerJumping && !playerFalling){
+			if ((cursors.up.isDown || keys.W.isDown)){ //&& player.y > boundary["up"]) {
+				player.body.velocity.y -= speed;
+			} else if ((cursors.down.isDown || keys.S.isDown)){ // && player.y < boundary["down"]) {
+				player.body.velocity.y += speed;
+			}
+			if (keys.Space.isDown && game.time.totalElapsedSeconds()-lastJumpLandedAt>jumpDelay){
+				playerJumping=true;
+				playerJumpPad.y=player.y;
+				player.body.gravity.y=defaultGravity;
 
+				game.time.events.add(Phaser.Timer.SECOND, stopJumping, this);
+			}
+		}
 		if (((level%20===0 && game.time.totalElapsedSeconds() - (lastWallSpawnTime+calmBeforeTheStorm)>=(Number(wall) + Number(1)) * wallSpawnDelay )
 	    || (level%20!=0 && game.time.totalElapsedSeconds() - lastWallSpawnTime>=(Number(wall) + Number(1)) * wallSpawnDelay))
 		  && !wallSpawnInAction) {
 			wallSpawnInAction = true;
 			spawnWall();
 		}
-
 	} else if (!gameRunning && menuScreenIsActive) {
 		game.input.keyboard.onDownCallback = function () {
 			menuScreenIsActive = false;
@@ -248,11 +298,17 @@ function update() {
 			roundStartTime = game.time.totalElapsedSeconds();
 		}
 	}
+
 }
 
 function render() {
 	if (debug && gameRunning) {
+		/*
 		game.debug.body(player);
+		game.debug.body(playerJumpPad);
+		game.debug.body(frontDecoration);
+		game.debug.body(backDecoration);
+		*/
 		game.debug.geom(playerLine, 'rgba(0, 0, 255,1)');
 		for(wall in walls){
 			game.debug.geom(wallLines[wall], 'rgba(255, 0, 0,1)');
@@ -310,6 +366,7 @@ function displayText() {
 }
 function gameOver(){
 	gameRunning=false;
+	gameOverText.visible=true;
 }
 
 
@@ -318,19 +375,7 @@ function loadMenu() {
 	menuScreenIsActive = true;
 }
 
-function nextLevel(){
-	roundTimer=roundDefaultTimer;
-	level++;
-	levelCaptionText.text = "Level: " + level;
-	scrollSpeed*=1.01;
-	wallSpawnDelay*=.95;
-	blinkDefaultCounter *= .99;
-	blinkCounterStart = blinkDefaultCounter;
-	blinkCounter = blinkDefaultCounter;
-	blinkDefaultDelay *= .98;
-	blinkDelayStart = blinkDefaultDelay
-	blinkDelay = blinkDefaultDelay;
-}
+
 
 function otherWall (){
 	if (lastWallSpawned === 0){
@@ -384,6 +429,12 @@ function spawnWall() {
 	game.time.events.add(Phaser.Timer.SECOND * blinkDelay, blinkWall, this);
 }
 
+function stopJumping(){
+	playerJumping=false;
+	playerFalling=true;
+	player.body.acceleration.y = 0;
+
+}
 function updateLines(){
 	playerLine = new Phaser.Line(player.body.position.x,
 		player.body.position.y + player.body.height,
