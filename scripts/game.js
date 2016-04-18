@@ -95,7 +95,7 @@ function create() {
 
 	gameWorld.visible = false;
 	onTop.visible = false;
-	gameOverText = game.add.text(scale * 8, scale * 16, "GAME\n OVER", { font:"128px Arial", fill:"white", align:"center" }) // TODO: deprecate with pixel art graphic
+	gameOverText = game.add.text(scale * 8, scale * 16, "GAME\n OVER", { font:" 128px Arial", fill: "white", align: "center" }) // TODO: deprecate with pixel art graphic
 	gameOverText.visible=false;
 	winText = game.add.text(scale * 8, scale * 16, "YOU\n WIN!", { font: "128px Arial", fill: "white", align: "center" }) // TODO: deprecate with pixel art graphic
 	winText.visible=false;
@@ -281,7 +281,7 @@ function update() {
 			spawnWall();
 		}
 	} else if (!gameRunning && menuScreenIsActive) {
-		game.input.keyboard.onDownCallback = function () {
+		game.input.keyboard.onUpCallback = function () {
 			menuScreenIsActive = false;
 			menuScreen.visible = false;
 			gameRunning = true;
