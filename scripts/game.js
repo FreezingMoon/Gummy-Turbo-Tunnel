@@ -60,6 +60,7 @@ function preload() {
 	game.load.image('stick-gum', 'sprites/stick-gum.png');
 
 	game.load.image('Gumble', './sprites/Gumble.png');
+	game.load.image('Gumble-jump', './sprites/Gumble-jump.png');
 	game.load.image('normal-wall', './sprites/normal-wall.png');
 }
 
@@ -129,12 +130,12 @@ function create() {
 	roadMarker.beginFill(0xcf3883 , 1);
 	roadMarker.drawRect(0, 0, scale, scale);
 
-	gummyWorm = game.add.tileSprite(0, 15 * scale, 0, 0, 'gummy-worm');
+	gummyWorm = game.add.tileSprite(0, scale * 15, 0, 0, 'gummy-worm');
 	gameWorld.add(gummyWorm);
 	gummyWorm.scale.setTo(scale);
 	gummyWorm.height = 15;
 
-	backDecoration = game.add.tileSprite(0, 32 * scale, 0, 0, 'gummy-ball');
+	backDecoration = game.add.tileSprite(0, scale * 32, 0, 0, 'gummy-ball');
 	gameWorld.add(backDecoration);
 	backDecoration.scale.setTo(scale);
 	backDecoration.height = 6;
@@ -144,7 +145,7 @@ function create() {
 	backDecoration.scale.setTo(scale);
 	backDecoration.body.immovable = true;
 
-	var road = game.add.tileSprite(0, 38 * scale, 0, 0, 'stick-gum');
+	var road = game.add.tileSprite(0, scale * 38, 0, 0, 'stick-gum');
 	gameWorld.add(road);
 	road.height = 19;
 	road.scale.setTo(scale);
@@ -172,7 +173,7 @@ function create() {
 	playerJumpPad.body.setSize(scale * 20, 3, 0, 0);
 	playerJumpPad.body.immovable = true;
 
-	frontDecoration = game.add.tileSprite(0, 54 * scale, 0, 0, 'gummy-ball');
+	frontDecoration = game.add.tileSprite(0, scale * 54, 0, 0, 'gummy-ball');
 	gameWorld.add(frontDecoration);
 	frontDecoration.scale.setTo(scale);
 	frontDecoration.height = 10;
@@ -183,7 +184,7 @@ function create() {
 	frontDecoration.scale.setTo(scale);
 	frontDecoration.body.immovable = true;
 
-	lastHeart = game.add.sprite(scale, 3 * scale, "warning");
+	lastHeart = game.add.sprite(scale, scale * 3, "warning");
 	lastHeart.scale.setTo(scale);
 	lastHeart.visible = false;
 	lastHeart.fixedtoCamera = true;
@@ -219,7 +220,7 @@ function update() {
 		}
 	}
 	if (gameRunning && !gamePaused && !menuScreenIsActive) {
-		if (level!=0 && level%20 === 0 && roadMarkerMoving === 0) {
+		if (level != 0 && level % 20 === 0 && roadMarkerMoving === 0) {
 			game.time.events.repeat(Phaser.Timer.SECOND, 3, moveRoadMarker, this);
 		} else if (level % 20 != 0 && roadMarkerMoving != 0) {
 			roadMarkerMoving=0;
@@ -246,7 +247,7 @@ function update() {
 					if (level >= 100) {
 						gameRunning = false;
 						winText.visible = true;
-					} else if (level%20 === 0) {
+					} else if (level % 20 === 0) {
 						checkpoint++;
 						blinkDefaultCounter -= 2;
 					}
@@ -311,7 +312,7 @@ function addHeart() {
 		// TODO: have a bigger gap between lives and hearts, having one transition from one side to the other on gain/loss while fading between sprites
 		// TODO: when no lives left, the left side gap will be filled with the warning sprite, meaning if you die it's game over
 
-		hearts.push(game.add.sprite(scale + (94 * (hearts.length)), 3 * scale, "heart"));
+		hearts.push(game.add.sprite(scale + ((hearts.length) * 94), scale * 3, "heart"));
 		hearts[hearts.length - 1].scale.setTo(scale);
 		onTop.add(hearts[hearts.length - 1]);
 		hearts[hearts.length - 1].fixedToCamera = true;
@@ -327,7 +328,6 @@ function blinkWall() {
 		wallStatus[lastWallSpawned] = true;
 		return;
 	}
-
 	walls[lastWallSpawned].visible = !walls[lastWallSpawned].visible;
 	blinkCounter--;
 	game.time.events.add(Phaser.Timer.SECOND * blinkDelay, blinkWall, this);
@@ -372,13 +372,11 @@ function otherWall () {
 function playerHit() {
 	resetWalls();
 	playerBeingHit = true;
-
 	lives--;
 	if (lives >= 0) {
 		hearts[lives].visible = false;
 		level=checkpoint * 20;
 		updateRoadMarker(true);
-
 		if (lives === 0) {
 			lastHeart.visible = true;
 		}
@@ -442,7 +440,7 @@ function unpauseGame() {
 }
 
 function moveRoadMarker() {
-	if (game.time.totalElapsedSeconds() - roadMarkerLastMoved>1) { //&& game.time.totalElapsedSeconds() - roadMarkerLastMoved<2){
+	if (game.time.totalElapsedSeconds() - roadMarkerLastMoved>1) { //&& game.time.totalElapsedSeconds() - roadMarkerLastMoved < 2) {
 			roadMarker.x += scale;
 			roadMarkerLastMoved = game.time.totalElapsedSeconds();
 			roadMarkerMoving++;
